@@ -19,7 +19,7 @@
     "hubot-scripts": ">= 2.1.0",
     "hubot-irc": ">=0.0.1",
     "optparse": "1.0.3",
-    "github": ">=0.1.7"
+    "githubot": ">=0.3.0"
   },
 
   "engines": {
