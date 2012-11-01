@@ -3,19 +3,28 @@ class TsohaHub
     @github = require('githubot')(@robot)
     @org = "tsoha-syksy2012"
 
+  formatRepoName: (username) ->
+    "harkka-#{username}"
+
   formatRepo: (username) ->
-    "#{@org}/#{username}"
+    "#{@org}/#{@formatRepoName username}"
 
   formatRepoUrl: (username) ->
     "/repos/#{@formatRepo username}"
 
   createRepository: (username, cb) ->
     @github.post "/orgs/#{@org}/repos", {
-      name: username,
+      name: @formatRepoName(username),
       has_wiki: false,
       auto_init: true,
       team_id: @getTeamId()
     }, cb
+
+  addNewStudent: (username, cb) ->
+    _this = this
+    @github.request "PUT", "/teams/#{@getTeamId()}/members/#{username}", {}, (data) ->
+      console.log "liitetty tiimiin"
+      _this.createRepository username, cb
 
   getRepository: (username, cb) ->
     @github.get @formatRepoUrl(username), cb
@@ -84,8 +93,9 @@ module.exports = (robot) ->
       user = users[0]
       user.username = msg.match[1].trim()
       msg.send "Selvä #{nick}, sinulle luodaan repository..."
-      tsohahub.createRepository user.username, (repository) ->
-        msg.send "#{nick}: #{repository.html_url}"
+      tsohahub.addNewStudent user.username, (repository) ->
+        msg.send "#{nick}: git clone #{repository.ssh_url} tsoha"
+        msg.send "#{nick}: luo vielä viikolle 1 haara komennolla: luo viikolle 1 haara"
 
   robot.respond /Mikä(.+)repo(.*)\?/i, (msg) ->
     nick = msg.message.user.name
@@ -101,8 +111,7 @@ module.exports = (robot) ->
     if users.length is 1
       user = users[0]
       tsohahub.createWeek user.username, msg.match[1].trim(), (pullRequest) ->
-        msg.send "#{nick}: Viikon edistymistä voit seurata: #{pullRequest.html_url}"
-
+        msg.send "#{nick}: Haara luotu, joten: git fetch && git checkout #{pullRequest.head.ref}"
 
   robot.respond /kommentoi/i, (msg) ->
     nick = msg.message.user.name
@@ -113,4 +122,4 @@ module.exports = (robot) ->
         if pullRequest?
           msg.send "tsohaohjaajat: #{pullRequest.html_url}"
         else
-          msg.send "#{nick}: Sinulla ei ole avointa pull requestia"
+          msg.send "#{nick}: Sinulla ei ole avointa pull requestia, kokeile: luo viikolle x haara"
